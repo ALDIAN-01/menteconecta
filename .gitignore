@@ -1,0 +1,33 @@
+# Secretos y configuración local (NUNCA subir)
+.env
+.env.*
+!.env.example
+
+# Dependencias
+node_modules/
+
+# Builds
+dist/
+build/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Cobertura y pruebas
+coverage/
+.nyc_output/
+
+# Editor / sistema operativo
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Archivos locales de SQL Server / temporales
+*.bak
+*.mdf
+*.ldf
+*.tmp

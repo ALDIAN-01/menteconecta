@@ -173,6 +173,30 @@ body {
   color: var(--muted);
 }
 
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.field select {
+  min-height: 42px;
+}
+.field textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+.field select:focus-visible,
+.field textarea:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.18);
+}
+
 .field-hint,
 .field-error {
   margin: 0;
@@ -354,6 +378,97 @@ body {
 .welcome-card .auth-title {
   margin: 0;
 }
+
+.emotion-card {
+  width: 100%;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 28px;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(36, 18, 63, 0.06), 0 8px 24px rgba(36, 18, 63, 0.05);
+}
+.emotion-header,
+.emotion-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.emotion-actions {
+  justify-content: flex-end;
+}
+.emotion-card .auth-title,
+.emotion-card h2,
+.emotion-card h3 {
+  margin: 0;
+}
+.consent-panel,
+.emotion-form-panel,
+.history-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.consent-panel h2,
+.emotion-form-panel h2,
+.history-section h2 {
+  font-size: 18px;
+}
+.policy-text {
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.policy-text p {
+  margin: 10px 0 0;
+  white-space: pre-wrap;
+}
+.emotion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.emotion-record {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.emotion-record-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.emotion-record-details span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.emotion-record-details p {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.delete-button {
+  align-self: flex-start;
+  flex: none;
+}
 .muted {
   margin: 0;
   color: var(--muted);
@@ -364,6 +479,28 @@ body {
   .auth-card {
     max-width: 1000px;
     grid-template-columns: minmax(260px, 34%) 1fr;
+  }
+
+  @media (max-width: 520px) {
+    .emotion-card {
+      padding: 20px 16px;
+    }
+    .emotion-header {
+      align-items: flex-start;
+    }
+    .emotion-actions {
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .consent-panel,
+    .emotion-form-panel,
+    .history-section {
+      padding: 16px;
+    }
+    .emotion-record {
+      flex-direction: column;
+    }
   }
   .auth-footer {
     max-width: 1000px;

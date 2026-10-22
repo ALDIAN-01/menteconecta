@@ -5,14 +5,16 @@ import { AppError } from '../utils/AppError.js';
  * El id SIEMPRE sale del token; nunca de req.body, req.query ni req.params.
  */
 export function createAuthenticate(authService) {
-  return (req, _res, next) => {
+  return async (req, _res, next) => {
     try {
       const header = req.headers.authorization ?? '';
       const [scheme, token, ...rest] = header.split(' ');
       if (scheme !== 'Bearer' || !token || rest.length > 0) {
         throw new AppError(401, 'Falta el token de autenticación.');
       }
-      req.auth = { idUsuario: authService.verifyToken(token) };
+      const idUsuario = authService.verifyToken(token);
+      await authService.getMe(idUsuario);
+      req.auth = { idUsuario };
       next();
     } catch (err) {
       next(err);

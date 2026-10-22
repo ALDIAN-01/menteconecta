@@ -52,3 +52,16 @@ export const loginUser = ({ correo, password }) =>
   request('/auth/login', { method: 'POST', body: { correo, password } });
 
 export const getCurrentUser = (token) => request('/auth/me', { token });
+
+export const getConsentStatus = (token) => request('/consent/status', { token });
+
+export const acceptEmotionalRecordConsent = (token) =>
+  request('/consent/accept', { method: 'POST', token, body: { aceptado: true } });
+
+export const createEmotionRecord = (token, record) =>
+  request('/emotions', { method: 'POST', token, body: record });
+
+export const getEmotionRecords = (token) => request('/emotions', { token });
+
+export const deleteEmotionRecord = (token, idRegistro) =>
+  request(`/emotions/${encodeURIComponent(idRegistro)}`, { method: 'DELETE', token });

@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import WelcomePage from './pages/WelcomePage.jsx';
+import EmotionPage from './pages/EmotionPage.jsx';
 
 /**
  * Navegación mínima por estado (sin librería de rutas, para mantener el piloto simple).
@@ -12,6 +13,7 @@ import WelcomePage from './pages/WelcomePage.jsx';
  */
 export default function App() {
   const [view, setView] = useState('login'); // 'login' | 'register'
+  const [authenticatedView, setAuthenticatedView] = useState('welcome');
   const [session, setSession] = useState(null); // { user, token } | null
   const [welcomeMessage, setWelcomeMessage] = useState('');
   const [loginNotice, setLoginNotice] = useState('');
@@ -19,6 +21,7 @@ export default function App() {
   const handleAuthSuccess = ({ message, user, token }) => {
     setWelcomeMessage(message);
     setLoginNotice('');
+    setAuthenticatedView('welcome');
     setSession({ user, token });
   };
 
@@ -35,10 +38,21 @@ export default function App() {
   }, []);
 
   if (session) {
+    if (authenticatedView === 'emotions') {
+      return (
+        <EmotionPage
+          session={session}
+          onBack={() => setAuthenticatedView('welcome')}
+          onLogout={handleLogout}
+          onSessionExpired={handleSessionExpired}
+        />
+      );
+    }
     return (
       <WelcomePage
         session={session}
         message={welcomeMessage}
+        onOpenEmotions={() => setAuthenticatedView('emotions')}
         onLogout={handleLogout}
         onSessionExpired={handleSessionExpired}
       />

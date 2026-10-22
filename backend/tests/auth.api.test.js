@@ -38,6 +38,10 @@ function createFakeRepository() {
       const row = { idUsuario: nextId++, nombre, correo, passwordHash, estado: true };
       rows.push(row);
       return { idUsuario: row.idUsuario, nombre, correo };
+    },
+    reset() {
+      rows.length = 0;
+      nextId = 1;
     }
   };
 }
@@ -76,7 +80,7 @@ describe('API /api/auth', () => {
   });
   after(() => server.close());
   beforeEach(() => {
-    repo.rows.length = 0;
+    repo.reset();
   });
 
   describe('POST /register', () => {

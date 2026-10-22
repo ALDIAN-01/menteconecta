@@ -1,7 +1,11 @@
 import { loadConfig } from './config/env.js';
 import { createApp } from './app.js';
 import { createUsuarioRepository } from './db/usuarioRepository.js';
+import { createConsentRepository } from './db/consentRepository.js';
+import { createEmotionRepository } from './db/emotionRepository.js';
 import { createAuthService } from './services/authService.js';
+import { createConsentService } from './services/consentService.js';
+import { createEmotionService } from './services/emotionService.js';
 import { closePool, getPool } from './db/pool.js';
 
 async function main() {
@@ -18,7 +22,14 @@ async function main() {
   }
 
   const authService = createAuthService({ usuarios: createUsuarioRepository(config.db), config });
-  const app = createApp({ authService, config });
+  const consentService = createConsentService({
+    consentimientos: createConsentRepository(config.db)
+  });
+  const emotionService = createEmotionService({
+    emociones: createEmotionRepository(config.db),
+    consentService
+  });
+  const app = createApp({ authService, consentService, emotionService, config });
 
   const server = app.listen(config.port, () => {
     console.log(`[api] MenteConecta API escuchando en http://localhost:${config.port}/api`);

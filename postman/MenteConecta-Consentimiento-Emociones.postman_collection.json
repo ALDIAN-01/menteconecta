@@ -1,0 +1,300 @@
+{
+  "info": {
+    "name": "MenteConecta - Módulo 2 (Consentimiento y emociones)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Ejecutar en orden con la API y SQL Server local disponibles. Crea cuentas de prueba con correos únicos."
+  },
+  "item": [
+    {
+      "name": "1. Registrar usuario de prueba",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Usuario Postman\",\n  \"correo\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.collectionVariables.set('email', 'modulo2.' + Date.now() + '@correo.com');"]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Cuenta creada (201)', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('token', pm.response.json().token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Ruta privada sin JWT (401)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/consent/status"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": ["pm.test('Sin JWT no accede a la ruta privada (401)', () => pm.response.to.have.status(401));"]
+        }
+      }]
+    },
+    {
+      "name": "3. Consultar consentimiento pendiente",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/consent/status"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('Estado del consentimiento (200)', () => pm.response.to.have.status(200));",
+            "pm.test('Finalidad emocional y borrador identificados', () => {",
+            "  const b = pm.response.json();",
+            "  pm.expect(b.consentimiento.finalidad).to.eql('REGISTRO_EMOCIONAL');",
+            "  pm.expect(b.consentimiento.valido).to.eql(false);",
+            "  pm.expect(b.politica).to.have.property('esBorrador');",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "4. Rechazar registro sin consentimiento (403)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"emocion\": \"Calma\",\n  \"intensidad\": 3\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/emotions"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": ["pm.test('Sin consentimiento no se guarda emoción (403)', () => pm.response.to.have.status(403));"]
+        }
+      }]
+    },
+    {
+      "name": "5. Rechazar aceptación no confirmada (400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"aceptado\": false\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/consent/accept"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": ["pm.test('Sin confirmación explícita no registra aceptación (400)', () => pm.response.to.have.status(400));"]
+        }
+      }]
+    },
+    {
+      "name": "6. Aceptar consentimiento explícitamente",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"aceptado\": true\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/consent/accept"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('Aceptación registrada (201)', () => pm.response.to.have.status(201));",
+            "pm.test('Consentimiento vigente para registro emocional', () => {",
+            "  const c = pm.response.json().consentimiento;",
+            "  pm.expect(c.aceptado).to.eql(true);",
+            "  pm.expect(c.valido).to.eql(true);",
+            "  pm.expect(c.finalidad).to.eql('REGISTRO_EMOCIONAL');",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "7. Guardar registro válido",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"emocion\": \"Calma\",\n  \"intensidad\": 3,\n  \"nota\": \"Prueba local de Postman\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/emotions"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('Registro creado (201)', () => pm.response.to.have.status(201));",
+            "const r = pm.response.json().registro;",
+            "pm.test('Datos del registro', () => {",
+            "  pm.expect(r.emocion).to.eql('Calma');",
+            "  pm.expect(r.intensidad).to.eql(3);",
+            "  pm.expect(r.idRegistro).to.be.a('number');",
+            "});",
+            "pm.collectionVariables.set('recordId', r.idRegistro);"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "8. Rechazar emoción manipulada",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"emocion\": \"Estrés\",\n  \"intensidad\": 3\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/emotions"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": ["pm.test('Emoción no permitida rechazada (400)', () => pm.response.to.have.status(400));"]
+        }
+      }]
+    },
+    {
+      "name": "9. Consultar historial propio",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/emotions"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('Historial propio (200)', () => pm.response.to.have.status(200));",
+            "pm.test('Incluye el registro creado', () => pm.expect(pm.response.json().registros.some(r => r.idRegistro === Number(pm.collectionVariables.get('recordId')))).to.eql(true));"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "10. Registrar segundo usuario para verificar propiedad",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Otro usuario\",\n  \"correo\": \"{{otherEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.collectionVariables.set('otherEmail', 'otro.' + Date.now() + '@correo.com');"]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Segundo usuario creado (201)', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('otherToken', pm.response.json().token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Usuario ajeno no puede eliminar el registro",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{otherToken}}" }],
+        "url": "{{baseUrl}}/emotions/{{recordId}}"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": ["pm.test('Registro ajeno no revelado (404)', () => pm.response.to.have.status(404));"]
+        }
+      }]
+    },
+    {
+      "name": "12. Eliminar registro propio",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/emotions/{{recordId}}"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": ["pm.test('Eliminación propia (204)', () => pm.response.to.have.status(204));"]
+        }
+      }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api" },
+    { "key": "password", "value": "UnaClaveSegura123!" },
+    { "key": "email", "value": "" },
+    { "key": "otherEmail", "value": "" },
+    { "key": "token", "value": "" },
+    { "key": "otherToken", "value": "" },
+    { "key": "recordId", "value": "" }
+  ]
+}

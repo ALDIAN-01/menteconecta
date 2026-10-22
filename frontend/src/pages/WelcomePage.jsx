@@ -7,7 +7,7 @@ import { ApiError, getCurrentUser } from '../api/authApi.js';
  * Consulta GET /api/auth/me con el token para mostrar los datos reales del servidor.
  * (El resto de la app —registro emocional, biblioteca, etc.— son módulos futuros.)
  */
-export default function WelcomePage({ session, message, onLogout, onSessionExpired }) {
+export default function WelcomePage({ session, message, onOpenEmotions, onLogout, onSessionExpired }) {
   const [user, setUser] = useState(null);
   const [error, setError] = useState('');
 
@@ -45,9 +45,11 @@ export default function WelcomePage({ session, message, onLogout, onSessionExpir
             <h1 className="auth-title">Hola, {user.nombre}.</h1>
             <p className="muted">Sesión iniciada con {user.correo}.</p>
             <p className="muted">
-              Esta es una pantalla provisional del módulo de acceso. Pronto: registro emocional, biblioteca y
-              asistente.
+              Consulta tu registro emocional personal y guarda cómo te sientes.
             </p>
+            <button type="button" className="btn btn-primary" onClick={onOpenEmotions}>
+              Mi registro emocional
+            </button>
           </>
         )}
         <button type="button" className="btn btn-secondary" onClick={onLogout}>

@@ -1,8 +1,8 @@
-# MenteConecta — Módulo 1: registro e inicio de sesión
+# MenteConecta — módulos 1 y 2: acceso y registro emocional
 
-Piloto de bienestar emocional para estudiantes del TdeA. Este repositorio contiene **solo el Módulo 1**
-(registro, inicio de sesión y consulta del usuario autenticado). Gemini, registros emocionales, biblioteca,
-consentimiento, etc. son módulos posteriores.
+Piloto de bienestar emocional para estudiantes del TdeA. El repositorio contiene el **Módulo 1**
+(registro e inicio de sesión) y el **Módulo 2** (consentimiento para la finalidad `REGISTRO_EMOCIONAL`
+y registro emocional personal). Biblioteca y Gemini siguen fuera de alcance.
 
 | Capa | Tecnología |
 |------|-----------|
@@ -19,7 +19,7 @@ MenteConecta/
 │   ├── src/
 │   │   ├── config/env.js            variables de entorno + validación
 │   │   ├── db/pool.js               conexión a SQL Server (pool único)
-│   │   ├── db/usuarioRepository.js  ÚNICO lugar con SQL (consultas parametrizadas, dbo.Usuario)
+│   │   ├── db/*Repository.js        SQL parametrizado para usuarios, consentimiento y emociones
 │   │   ├── validation/              reglas de validación del servidor
 │   │   ├── services/authService.js  registro, login, JWT (bcrypt)
 │   │   ├── controllers/ routes/ middleware/   capa HTTP delgada
@@ -29,15 +29,15 @@ MenteConecta/
 │   ├── scripts/check-db.js          verifica la conexión desde Node
 │   └── .env.example
 ├── frontend/                React + Vite (src/pages, components, api, validation)
-├── database/01_schema_seed_MenteConecta.sql   script SQL (SIN modificar)
-├── docs/                    contrato de API, MER, diagramas, capturas de Figma
-└── postman/MenteConecta-Auth.postman_collection.json
+├── database/01_schema_seed_MenteConecta.sql   esquema base (sin cambios para el módulo 2)
+├── docs/                    contratos de API, MER, diagramas, capturas de Figma
+└── postman/                 colecciones de autenticación y módulo 2
 ```
 
 Convención de arquitectura (para no romperla al continuar): **ruta → controlador → servicio → repositorio**.
 Solo `db/*Repository.js` escribe SQL; los servicios no conocen HTTP; los controladores no conocen SQL.
-Cada módulo nuevo (consentimiento, emociones…) debe añadir sus propios `*Routes/Controller/Service/Repository`
-y registrarse en `backend/src/app.js`.
+Los módulos nuevos añaden sus propios `*Routes/Controller/Service/Repository` y se registran en
+`backend/src/app.js`.
 
 ---
 
@@ -120,9 +120,9 @@ cd backend
 npm test
 ```
 
-Usan un repositorio en memoria que imita `dbo.Usuario` (incluida la violación UNIQUE 2627). Cubren validaciones, hash bcrypt,
-JWT (alterado, vencido, otro secreto, `alg: none`), 409/401/403, `/me`, errores 500 genéricos y 429.
-**No cubren** las consultas SQL reales ni el UNIQUE real de SQL Server → usa Postman (siguiente sección).
+Usan repositorios en memoria. Cubren autenticación, validaciones y flujo HTTP del consentimiento/emociones,
+incluyendo autorización por propietario. **No cubren** las consultas SQL reales ni las restricciones reales
+de SQL Server → usa Postman (siguiente sección).
 
 ### Postman (**requieren backend + SQL Server**)
 
@@ -145,6 +145,71 @@ JWT (alterado, vencido, otro secreto, `alg: none`), 409/401/403, `/me`, errores 
 | 3.2 | `/me` sin token | `401` |
 | 3.3 | `/me` con token alterado | `401` |
 | 3.4 | `/me?idUsuario=999999` | `200` con el usuario **del token** (ignora el id) |
+
+### Módulo 2 (consentimiento y emociones)
+
+1. Importa `postman/MenteConecta-Consentimiento-Emociones.postman_collection.json`.
+2. Confirma que el backend y SQL Server están disponibles: `http://localhost:3000/api/health` responde
+   `{"status":"ok"}`. El frontend debe abrirse desde `http://localhost:5173` para coincidir con CORS.
+3. Ejecuta las peticiones en orden. Se crean dos cuentas de prueba con correos sintéticos únicos;
+   no uses datos personales reales. La colección comprueba JWT obligatorio, consentimiento requerido,
+   aceptación explícita, validación de emoción, historial y propiedad al eliminar.
+4. **Para mostrar persistencia en SQL Server:** ejecuta solo las peticiones 1–11 (individualmente o
+   seleccionándolas en Runner) y no ejecutes aún la 12. Después de la petición 11 (“Usuario ajeno no
+   puede eliminar el registro”), copia el valor `email` de variables de colección y ejecuta en SSMS
+   las consultas de verificación de abajo. La colección borra el registro propio en la petición 12.
+5. Ejecuta la petición 12 para demostrar la eliminación del propio registro (`204`). Vuelve a correr
+   la consulta de emociones: ya no debe aparecer ese `idRegistro`; el consentimiento se conserva.
+6. Rutas y formatos completos: [docs/05_Contrato_API_Consentimiento_Emociones.md](docs/05_Contrato_API_Consentimiento_Emociones.md).
+
+El esquema existente ya contiene `dbo.PoliticaPrivacidad`, `dbo.ConsentimientoDatos`,
+`dbo.Emocion` y `dbo.RegistroEmocional`, así que **no se necesita migración SQL**. En una instalación
+nueva ejecuta `database/01_schema_seed_MenteConecta.sql` como se describe arriba. La política `1.0`
+sembrada es un borrador pendiente de aprobación institucional; actualiza el texto mediante el proceso
+institucional antes de recopilar datos reales. El servicio limita el registro a Calma, Alegría, Tristeza
+y Ansiedad aunque el catálogo inicial contenga otras emociones.
+
+#### Evidencia de persistencia en SSMS
+
+La colección genera un correo nuevo en cada ejecución. Copia el valor de `email` desde Postman
+(*Collection → Variables*) y reemplaza el valor de `@correo` antes de ejecutar este bloque en SSMS.
+Hazlo después de la petición 11 y antes de la 12. Son consultas de solo lectura:
+
+```sql
+USE MenteConecta;
+GO
+
+DECLARE @correo NVARCHAR(254) = N'modulo2.COPIA_AQUI_EL_VALOR_DE_POSTMAN@correo.com';
+
+-- Debe existir una aceptación para REGISTRO_EMOCIONAL, con fecha y política.
+SELECT u.correo, p.version AS versionPolitica, c.finalidad, c.aceptado,
+       c.fechaAceptacion, c.revocadoEn
+FROM dbo.ConsentimientoDatos AS c
+INNER JOIN dbo.Usuario AS u ON u.idUsuario = c.idUsuario
+INNER JOIN dbo.PoliticaPrivacidad AS p ON p.idPolitica = c.idPolitica
+WHERE u.correo = @correo
+  AND c.finalidad = N'REGISTRO_EMOCIONAL';
+
+-- Antes de borrar: debe mostrar Calma, intensidad 3 y la nota de Postman.
+-- También prueba que el registro referencia al consentimiento de ese usuario.
+SELECT r.idRegistro, u.correo, e.nombre AS emocion, r.intensidad, r.nota,
+       r.fecha, c.finalidad, c.aceptado, c.idConsentimiento
+FROM dbo.RegistroEmocional AS r
+INNER JOIN dbo.Usuario AS u ON u.idUsuario = r.idUsuario
+INNER JOIN dbo.Emocion AS e ON e.idEmocion = r.idEmocion
+INNER JOIN dbo.ConsentimientoDatos AS c
+  ON c.idConsentimiento = r.idConsentimiento
+ AND c.idUsuario = r.idUsuario
+WHERE u.correo = @correo
+ORDER BY r.fecha DESC, r.idRegistro DESC;
+```
+
+Resultados esperados antes de la petición 12: consentimiento `REGISTRO_EMOCIONAL` con `aceptado = 1`;
+un registro `Calma`, intensidad `3`, nota `Prueba local de Postman` y fecha UTC. La petición 11 intenta
+borrar ese registro con otro usuario y espera `404`; la consulta debe confirmar que el registro sigue
+existiendo. Después de la petición 12, la segunda consulta debe devolver cero filas para ese usuario.
+El primer resultado (consentimiento) debe seguir presente. No compartas capturas que expongan tokens,
+contraseñas ni notas emocionales reales.
 
 Ejemplo manual con curl:
 
@@ -184,7 +249,9 @@ cuerpo JSON máx. 10 KB; sin stack traces al cliente; no se registran contraseñ
 - `409` en el registro revela que un correo existe (es inherente al contrato; el rate limit lo mitiga).
 - El rate limit es en memoria (se reinicia con el servidor) y por IP; suficiente para el piloto.
 - Contraseña máxima de **72 bytes** (límite de bcrypt; añadido a las reglas del contrato).
-- La casilla de términos y la confirmación de contraseña solo se validan en el frontend y **no** se envían (ver “Diferencias Figma ↔ contrato”).
+- En registro, la casilla de términos generales y la confirmación de contraseña solo se validan en el frontend y **no** se envían. No son ni sustituyen el consentimiento específico `REGISTRO_EMOCIONAL`.
+- `npm test` usa repositorios en memoria; demuestra las reglas y respuestas de la API, pero no ejecuta SQL Server.
+  La persistencia real se evidencia con la colección Postman y las consultas de solo lectura anteriores.
 - Fuente: se usa `DM Sans` si está instalada y, si no, la fuente del sistema (no se carga de Google Fonts para no hacer peticiones externas).
 - El `package-lock.json` debe generarse con el primer `npm install` en `backend/` y `frontend/` y **commitearse**.
 
@@ -193,7 +260,7 @@ cuerpo JSON máx. 10 KB; sin stack traces al cliente; no se registran contraseñ
 | Figma | Decisión |
 |-------|----------|
 | Registro: “Confirmar contraseña” | Solo validación en el frontend; no viaja al backend (el contrato recibe 3 campos). |
-| Registro: casilla “Acepto términos y política de protección de datos” | Obligatoria en el frontend, **no se guarda**: `dbo.ConsentimientoDatos` solo admite finalidades `REGISTRO_EMOCIONAL` y `CONVERSACION_IA`. Debe resolverse en el módulo de consentimiento. |
+| Registro: casilla “Acepto términos y política de protección de datos” | Obligatoria en el frontend, **no se guarda**. El consentimiento específico para `REGISTRO_EMOCIONAL` se solicita después de iniciar sesión, en el Módulo 2; no reutiliza esta aceptación general. |
 | “¿Olvidaste tu contraseña?” y “Política de privacidad” | Fuera de alcance: se muestran como en Figma, pero solo despliegan un aviso “no disponible/próximamente”. |
 | Pantalla “Cambiar contraseña” (RF14) y resto de pantallas | No implementadas (fuera del Módulo 1). |
 | Tras registrarse/entrar | Pantalla provisional “Hola, {nombre}” que llama a `GET /auth/me` y permite cerrar sesión (no existe en Figma; sirve de confirmación). |
@@ -204,7 +271,12 @@ cuerpo JSON máx. 10 KB; sin stack traces al cliente; no se registran contraseñ
 - [ ] `backend/.env` creado desde `.env.example` (con `JWT_SECRET` propio) y **no** aparece en `git status`.
 - [ ] `npm run db:check` muestra conexión correcta y tabla `dbo.Usuario`.
 - [ ] `npm test` (backend) pasa.
-- [ ] Postman: colección completa en verde (12 peticiones).
+- [ ] Postman: colección de autenticación completa en verde (12 peticiones).
+- [ ] Postman: colección del módulo 2 completa en verde con SQL Server real (12 peticiones).
+- [ ] SSMS: aceptación y registro de Postman visibles antes de la petición de borrado propio; registro ausente después.
+- [ ] Módulo 2: sin consentimiento no se crea un registro; intensidad/notas inválidas y campos adicionales se rechazan.
+- [ ] Módulo 2: historial solo muestra registros propios y un usuario no elimina registros ajenos.
+- [ ] Política institucional revisada/aprobada antes de recopilar datos reales (el texto incluido es borrador).
 - [ ] En SSMS, `passwordHash` empieza por `$2b$` y no contiene la contraseña.
 - [ ] Registrar `Ana@Correo.com` y luego `ana@correo.com` → el segundo da `409` y hay una sola fila.
 - [ ] Login con clave errónea → `401` con el mismo mensaje que con correo inexistente.
@@ -246,4 +318,23 @@ Reglas para continuar sin cambiar la arquitectura:
 5. No modifiques `database/01_schema_seed_MenteConecta.sql` en silencio: los cambios de esquema se hacen en un script nuevo numerado (`02_...sql`) y se avisan al equipo.
 6. Antes de abrir un PR: `cd backend && npm test` y `cd frontend && npm run build`.
 7. Flujo Git sugerido: una rama por tarea (`feature/...`), PR pequeño, el otro integrante revisa.
-8. Siguiente módulo (no implementado): consentimiento (`/api/consent`) → emociones → registros emocionales → biblioteca → chat con Gemini (la clave de Gemini **solo** en el backend).
+8. Próximos módulos (no implementados): biblioteca y chat con Gemini (la clave de Gemini **solo** en el backend). El Módulo 2 no envía registros ni notas a servicios externos.
+
+## 9. Punto de partida para el siguiente módulo
+
+El siguiente alcance sugerido es la **biblioteca de recursos de bienestar**; no iniciar Gemini todavía.
+El esquema inicial ya define `dbo.CategoriaRecurso`, `dbo.RecursoBienestar` y `dbo.Favorito`.
+Antes de codificar, revisa las pantallas aprobadas y acuerda el alcance/contrato del módulo con el equipo.
+
+- Mantén el patrón ruta → controlador → servicio → repositorio, el pool SQL único, las consultas
+  parametrizadas y el JWT en memoria.
+- Las rutas personales de favoritos deben filtrar siempre por `req.auth.idUsuario`. La lectura de recursos
+  públicos no debe exponer campos no destinados al cliente.
+- Añade el contrato y la colección Postman del módulo; amplía pruebas `node:test` sin reemplazar las
+  pruebas existentes.
+- Revisa si las tablas existentes satisfacen el alcance acordado. Si no, propone una migración incremental
+  `database/02_...sql`; no cambies en silencio el script inicial.
+- No reutilices el consentimiento `REGISTRO_EMOCIONAL` para finalidades nuevas. Un futuro chat con Gemini
+  requiere consentimiento separado `CONVERSACION_IA`, revisión del flujo de datos y secreto solo en backend.
+- Antes de abrir un PR, valida `cd backend; npm test` y `cd frontend; npm run build`. La integración
+  SQL real se valida aparte con Postman y SSMS.

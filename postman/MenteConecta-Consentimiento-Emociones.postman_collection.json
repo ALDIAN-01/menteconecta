@@ -65,11 +65,12 @@
           "type": "text/javascript",
           "exec": [
             "pm.test('Estado del consentimiento (200)', () => pm.response.to.have.status(200));",
-            "pm.test('Finalidad emocional y borrador identificados', () => {",
+            "pm.test('Finalidad emocional y política vigente identificadas', () => {",
             "  const b = pm.response.json();",
             "  pm.expect(b.consentimiento.finalidad).to.eql('REGISTRO_EMOCIONAL');",
             "  pm.expect(b.consentimiento.valido).to.eql(false);",
-            "  pm.expect(b.politica).to.have.property('esBorrador');",
+            "  pm.expect(b.politica.esBorrador).to.eql(false);",
+            "  pm.expect(b.politica.contenido).to.include('Aviso de privacidad');",
             "});"
           ]
         }

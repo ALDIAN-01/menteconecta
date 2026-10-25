@@ -141,6 +141,11 @@ body {
   font-size: 12px;
   font-weight: 600;
 }
+.field-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
 
 .field input {
   width: 100%;
@@ -474,33 +479,108 @@ body {
   color: var(--muted);
 }
 
+.emotion-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.emotion-option {
+  min-width: 0;
+  min-height: 88px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 6px;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.emotion-option:hover:not(:disabled) {
+  border-color: var(--primary);
+}
+.emotion-option.is-selected {
+  color: var(--primary);
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(109, 40, 217, 0.12);
+}
+.emotion-option:focus-visible,
+.intensity-slider:focus-visible {
+  outline: 3px solid rgba(109, 40, 217, 0.35);
+  outline-offset: 3px;
+}
+.emotion-option:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+.emotion-option-emoji {
+  font-size: 28px;
+  line-height: 1;
+}
+.intensity-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.intensity-label-row output {
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+.intensity-slider {
+  width: 100%;
+  height: 8px;
+  margin: 10px 0 2px;
+  padding: 0;
+  appearance: none;
+  background: linear-gradient(
+    to right,
+    var(--primary) 0,
+    var(--primary) var(--intensity-fill),
+    var(--border) var(--intensity-fill),
+    var(--border) 100%
+  );
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.intensity-slider::-webkit-slider-thumb {
+  width: 20px;
+  height: 20px;
+  appearance: none;
+  background: var(--surface);
+  border: 3px solid var(--primary);
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(36, 18, 63, 0.18);
+}
+.intensity-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--surface);
+  border: 3px solid var(--primary);
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(36, 18, 63, 0.18);
+}
+.intensity-scale {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
 /* ---------- Escritorio: panel lateral + formulario (Figma "Login/Registro web") ---------- */
 @media (min-width: 860px) {
   .auth-card {
     max-width: 1000px;
     grid-template-columns: minmax(260px, 34%) 1fr;
-  }
-
-  @media (max-width: 520px) {
-    .emotion-card {
-      padding: 20px 16px;
-    }
-    .emotion-header {
-      align-items: flex-start;
-    }
-    .emotion-actions {
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 8px;
-    }
-    .consent-panel,
-    .emotion-form-panel,
-    .history-section {
-      padding: 16px;
-    }
-    .emotion-record {
-      flex-direction: column;
-    }
   }
   .auth-footer {
     max-width: 1000px;
@@ -554,5 +634,38 @@ body {
   }
   .desktop-only {
     display: inline;
+  }
+}
+
+@media (max-width: 520px) {
+  .emotion-card {
+    padding: 20px 16px;
+  }
+  .emotion-header {
+    align-items: flex-start;
+  }
+  .emotion-actions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  .consent-panel,
+  .emotion-form-panel,
+  .history-section {
+    padding: 16px;
+  }
+  .emotion-record {
+    flex-direction: column;
+  }
+  .emotion-options {
+    gap: 6px;
+  }
+  .emotion-option {
+    min-height: 78px;
+    padding: 8px 3px;
+    font-size: 11px;
+  }
+  .emotion-option-emoji {
+    font-size: 24px;
   }
 }

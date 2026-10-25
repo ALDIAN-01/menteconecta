@@ -28,15 +28,16 @@ TOTP/2FA, recuperación por correo, roles de administrador, perfil editable, rec
 4. Los mensajes se guardan asociados a una conversación. El backend debe validar que esa conversación pertenece al usuario autenticado.
 5. La clave de Gemini nunca va en el frontend.
 6. No se incluyen usuarios de prueba con contraseñas en texto plano.
-7. La política incluida en SQL es un borrador técnico; reemplazarlo por el texto institucional aprobado antes de recoger datos reales.
+7. La política incluida en SQL describe el funcionamiento actual del módulo; la entidad responsable debe completar sus datos de contacto y revisarla antes de un despliegue institucional.
 
 ## Instalación local
 1. Abrir `01_schema_seed_MenteConecta.sql` en SSMS.
 2. Ejecutar con una cuenta que pueda crear la base de datos.
 3. Confirmar que se creó `MenteConecta` y sus tablas.
 4. Registrar usuarios desde la API para que `passwordHash` se genere con bcrypt.
-5. El Módulo 2 usa el esquema existente y no requiere una migración adicional. La política `1.0` sembrada
-   está identificada como borrador y requiere aprobación institucional antes de utilizar datos reales.
+5. El Módulo 2 usa el esquema existente y no requiere una migración adicional. La política `1.0`
+   sembrada describe el tratamiento de datos implementado; no representa por sí sola aprobación
+   institucional ni certificación de cumplimiento legal.
 
 ## Reglas que debe aplicar la API
 - Normalizar el correo antes de registrar/iniciar sesión.

@@ -29,7 +29,7 @@ finalidad indicada.
   "politica": {
     "version": "1.0",
     "contenido": "Texto de la política vigente...",
-    "esBorrador": true
+    "esBorrador": false
   }
 }
 ```
@@ -64,7 +64,7 @@ Entrada:
   "politica": {
     "version": "1.0",
     "contenido": "Texto de la política vigente...",
-    "esBorrador": true
+    "esBorrador": false
   }
 }
 ```
@@ -148,8 +148,10 @@ para el usuario; `500` error interno genérico.
 
 ## Privacidad y estado del texto
 
-El script inicial contiene un texto de política marcado `BORRADOR PARA EL PILOTO`. La interfaz presenta
-la advertencia cuando `esBorrador` es verdadero. La institución debe aprobar y publicar el texto antes
-de utilizar datos reales. Esta implementación no constituye una revisión ni una afirmación de
-cumplimiento legal. No existe revocación desde la interfaz de este módulo. El historial/eliminación
-siguen disponibles al usuario autenticado para no impedirle revisar o borrar sus datos.
+La política `1.0` describe los datos que usa el módulo, su finalidad, el consentimiento explícito,
+la consulta y eliminación de registros, y las limitaciones actualmente implementadas. El campo
+`esBorrador` se calcula buscando el prefijo `BORRADOR` en el contenido y es `false` para el texto
+incluido. Esto no representa aprobación institucional ni una certificación de cumplimiento legal:
+antes de un despliegue institucional, la entidad responsable debe completar sus datos de contacto
+y revisar el aviso. La interfaz aún no ofrece revocación automática; el historial y la eliminación
+individual permanecen disponibles al usuario autenticado.

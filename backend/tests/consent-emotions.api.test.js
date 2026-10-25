@@ -44,7 +44,7 @@ function createConsentRepository() {
   const policy = {
     idPolitica: 1,
     version: '1.0',
-    contenido: 'BORRADOR PARA EL PILOTO: texto pendiente de aprobación institucional.'
+    contenido: 'Aviso de privacidad del registro emocional de MenteConecta, versión 1.0.'
   };
   return {
     rows,
@@ -177,7 +177,7 @@ describe('API de consentimiento y registro emocional', () => {
     assert.equal((await harness.call('/emotions', { token })).status, 401);
   });
 
-  test('muestra el consentimiento pendiente con finalidad y política identificada como borrador', async () => {
+  test('muestra el consentimiento pendiente y la política vigente del registro emocional', async () => {
     const response = await harness.call('/consent/status', { token });
     assert.equal(response.status, 200);
     assert.deepEqual(response.json.consentimiento, {
@@ -188,7 +188,8 @@ describe('API de consentimiento y registro emocional', () => {
       revocadoEn: null,
       version: '1.0'
     });
-    assert.equal(response.json.politica.esBorrador, true);
+    assert.equal(response.json.politica.esBorrador, false);
+    assert.match(response.json.politica.contenido, /Aviso de privacidad/);
   });
 
   test('no registra consentimiento sin confirmación explícita y guarda el aceptado para el usuario del JWT', async () => {

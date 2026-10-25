@@ -322,9 +322,41 @@ IF NOT EXISTS (SELECT 1 FROM dbo.CategoriaRecurso WHERE nombre = N'Meditación')
     INSERT INTO dbo.CategoriaRecurso(nombre, descripcion) VALUES (N'Meditación', N'Prácticas breves de atención al momento presente.');
 GO
 
-IF NOT EXISTS (SELECT 1 FROM dbo.PoliticaPrivacidad WHERE version = N'1.0')
+DECLARE @contenidoPoliticaPrivacidad NVARCHAR(MAX) = N'Aviso de privacidad y consentimiento para el registro emocional — MenteConecta, versión 1.0
+
+1. Responsable y alcance
+MenteConecta es un proyecto piloto de bienestar emocional dirigido a estudiantes del TdeA. Este aviso describe el tratamiento de datos en el módulo de registro emocional de la instancia administrada para el proyecto. La institución que opere la instancia debe identificar al responsable del tratamiento y su canal oficial de privacidad en sus medios institucionales.
+
+2. Datos tratados y finalidad
+Para crear y proteger tu cuenta se utilizan tu nombre, correo electrónico y una contraseña almacenada como hash. Si aceptas este aviso, también se guardan la emoción que seleccionas, su intensidad de 1 a 5, la nota opcional que escribas, la fecha del registro y la evidencia de tu consentimiento (finalidad, versión de esta política y fecha de aceptación). Estos datos se usan para ofrecerte el historial personal y permitirte consultar y eliminar tus registros.
+
+3. Autorización y uso limitado
+El registro emocional solo se habilita después de que aceptes expresamente este aviso. Puedes dejar la nota vacía y elegir qué registrar. Esta autorización se limita al funcionamiento de este módulo: no permite usar tus registros para publicidad, investigación, perfilamiento, entrenamiento de inteligencia artificial ni para tomar decisiones sobre ti. El módulo no envía tus emociones ni tus notas a servicios de inteligencia artificial.
+
+4. Acceso, almacenamiento y protección
+Los registros quedan asociados a tu cuenta y el sistema limita su consulta y eliminación al usuario autenticado titular. El equipo que administra la plataforma puede necesitar acceso técnico para operar y mantener la base de datos. La contraseña no se almacena en texto legible y las solicitudes al servidor se validan para proteger la cuenta y separar los datos de cada usuario. Ninguna medida digital elimina por completo los riesgos de seguridad; evita incluir en las notas datos que identifiquen a otras personas.
+
+5. Conservación y control
+Puedes consultar tu historial y eliminar registros individuales desde la aplicación. En esta versión no existe eliminación de cuenta ni un plazo automático de borrado; los datos permanecen en la base de datos hasta que elimines el registro o el equipo responsable gestione su supresión. La interfaz tampoco ofrece todavía un control automático para revocar el consentimiento. Si deseas dejar de registrar emociones o solicitar la revocación, contacta al equipo responsable por los canales institucionales del TdeA; la revocación no elimina por sí sola los registros existentes.
+
+6. Uso responsable y límites
+El registro es una herramienta personal de reflexión y no presta atención clínica, no realiza diagnósticos y no sustituye a un profesional de salud. Las notas no son un canal de emergencia ni están sujetas a supervisión clínica. Si estás ante una situación urgente, comunícate con los servicios de emergencia o con una persona profesional de confianza.
+
+7. Consultas y derechos
+Puedes revisar y borrar tus registros desde el historial. Para solicitar información, corrección, eliminación adicional o ejercer otros derechos sobre tus datos, utiliza los canales oficiales de atención y privacidad de la institución responsable del piloto. No incluyas información sensible de terceros en tus registros.
+
+Este aviso informa el funcionamiento implementado en el piloto; no constituye asesoría jurídica ni acredita por sí solo el cumplimiento de obligaciones legales. La entidad responsable debe completar sus datos de contacto y revisar el aviso antes de un despliegue institucional.';
+
+IF EXISTS (
+    SELECT 1 FROM dbo.PoliticaPrivacidad
+    WHERE version = N'1.0' AND contenido LIKE N'BORRADOR PARA EL PILOTO%'
+)
+    UPDATE dbo.PoliticaPrivacidad
+       SET contenido = @contenidoPoliticaPrivacidad
+     WHERE version = N'1.0';
+ELSE IF NOT EXISTS (SELECT 1 FROM dbo.PoliticaPrivacidad WHERE version = N'1.0')
     INSERT INTO dbo.PoliticaPrivacidad(version, contenido)
-    VALUES (N'1.0', N'BORRADOR PARA EL PILOTO: reemplazar por el texto de privacidad aprobado por la institución antes de recopilar datos reales.');
+    VALUES (N'1.0', @contenidoPoliticaPrivacidad);
 GO
 
 IF NOT EXISTS (SELECT 1 FROM dbo.AvisoAsistente WHERE version = N'1.0')

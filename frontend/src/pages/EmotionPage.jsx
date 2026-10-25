@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ApiError, acceptEmotionalRecordConsent, createEmotionRecord, deleteEmotionRecord, getConsentStatus, getEmotionRecords } from '../api/authApi.js';
 import { Logo } from '../components/AuthLayout.jsx';
-import { validateEmotionForm } from '../validation/emotionValidation.js';
+import { EMOTIONS, validateEmotionForm } from '../validation/emotionValidation.js';
 
 const INITIAL_FORM = { emocion: '', intensidad: '3', nota: '' };
 
@@ -131,14 +131,14 @@ export default function EmotionPage({ session, onBack, onLogout, onSessionExpire
         </header>
 
         <h1 className="auth-title">Mi registro emocional</h1>
-        <p className="muted">Un espacio personal para registrar cómo te sientes. Tus registros no se envían a servicios externos.</p>
+        <p className="muted">Registra cómo te sientes, identifica la intensidad y conserva un historial privado que puedes revisar o eliminar.</p>
 
         {pageError && <p className="alert alert-error" role="alert">{pageError}</p>}
         {success && <p className="alert alert-success" role="status">{success}</p>}
         {loading && <p className="muted" role="status">Cargando tu información…</p>}
         {!loading && consent?.politica?.esBorrador && (
           <p className="alert alert-info" role="note">
-            El texto de la política es un borrador pendiente de aprobación institucional; no representa una declaración de cumplimiento legal.
+            En MenteConecta cuidamos tu privacidad. Tus datos emocionales se tratan de forma confidencial y se utilizan para ofrecerte una experiencia de bienestar personalizada.
           </p>
         )}
 
@@ -146,7 +146,7 @@ export default function EmotionPage({ session, onBack, onLogout, onSessionExpire
           <section className="consent-panel" aria-labelledby="consent-title">
             <h2 id="consent-title">Consentimiento para el registro emocional</h2>
             <p className="field-hint">
-              Finalidad: almacenar tus registros emocionales para que puedas consultarlos en tu cuenta. Este permiso no autoriza otros usos.
+              Al aceptar, autorizas el almacenamiento de las emociones que elijas, su intensidad y las notas opcionales para que puedas consultar y eliminar tu historial personal. Tus registros no se envían a servicios de inteligencia artificial ni se usan para otros fines.
             </p>
             <div className="policy-text">
               <h3>Política {consent.politica.version}</h3>
@@ -162,45 +162,63 @@ export default function EmotionPage({ session, onBack, onLogout, onSessionExpire
           <section className="emotion-form-panel" aria-labelledby="emotion-form-title">
             <h2 id="emotion-form-title">¿Cómo te sientes hoy?</h2>
             <form className="form" onSubmit={handleSubmit} noValidate>
-              <div className="field">
-                <label htmlFor="emocion">Emoción</label>
-                <select
-                  id="emocion"
-                  name="emocion"
-                  value={form.emocion}
-                  onChange={(event) => {
-                    setForm((previous) => ({ ...previous, emocion: event.target.value }));
-                    setFieldErrors((previous) => ({ ...previous, emocion: undefined }));
-                  }}
-                  aria-invalid={fieldErrors.emocion ? 'true' : undefined}
-                  aria-describedby={fieldErrors.emocion ? 'emocion-error' : undefined}
-                  disabled={saving}
-                >
-                  <option value="">Selecciona una emoción</option>
-                  <option value="Calma">Calma</option>
-                  <option value="Alegría">Alegría</option>
-                  <option value="Tristeza">Tristeza</option>
-                  <option value="Ansiedad">Ansiedad</option>
-                </select>
+              <div
+                className="field"
+                role="group"
+                aria-labelledby="emocion-label"
+                aria-describedby={fieldErrors.emocion ? 'emocion-error' : undefined}
+                aria-invalid={fieldErrors.emocion ? 'true' : undefined}
+              >
+                <p id="emocion-label" className="field-label">¿Qué emoción se acerca más a lo que sientes?</p>
+                <div className="emotion-options">
+                  {EMOTIONS.map(({ nombre, emoji }) => (
+                    <button
+                      key={nombre}
+                      type="button"
+                      className={`emotion-option${form.emocion === nombre ? ' is-selected' : ''}`}
+                      aria-pressed={form.emocion === nombre}
+                      aria-label={nombre}
+                      onClick={() => {
+                        setForm((previous) => ({ ...previous, emocion: nombre }));
+                        setFieldErrors((previous) => ({ ...previous, emocion: undefined }));
+                      }}
+                      disabled={saving}
+                    >
+                      <span className="emotion-option-emoji" aria-hidden="true">{emoji}</span>
+                      <span>{nombre}</span>
+                    </button>
+                  ))}
+                </div>
                 {fieldErrors.emocion && <p id="emocion-error" className="field-error">{fieldErrors.emocion}</p>}
               </div>
 
               <div className="field">
-                <label htmlFor="intensidad">Intensidad (1 a 5)</label>
-                <select
+                <div className="intensity-label-row">
+                  <label htmlFor="intensidad">Intensidad</label>
+                  <output id="intensidad-valor" htmlFor="intensidad">{form.intensidad} de 5</output>
+                </div>
+                <input
                   id="intensidad"
+                  className="intensity-slider"
                   name="intensidad"
+                  type="range"
+                  min="1"
+                  max="5"
+                  step="1"
                   value={form.intensidad}
+                  style={{ '--intensity-fill': `${(Number(form.intensidad) - 1) * 25}%` }}
                   onChange={(event) => {
                     setForm((previous) => ({ ...previous, intensidad: event.target.value }));
                     setFieldErrors((previous) => ({ ...previous, intensidad: undefined }));
                   }}
                   aria-invalid={fieldErrors.intensidad ? 'true' : undefined}
-                  aria-describedby={fieldErrors.intensidad ? 'intensidad-error' : undefined}
+                  aria-describedby={fieldErrors.intensidad ? 'intensidad-description intensidad-error' : 'intensidad-description'}
                   disabled={saving}
-                >
-                  {[1, 2, 3, 4, 5].map((value) => <option key={value} value={value}>{value}</option>)}
-                </select>
+                />
+                <div className="intensity-scale" aria-hidden="true">
+                  {[1, 2, 3, 4, 5].map((value) => <span key={value}>{value}</span>)}
+                </div>
+                <p id="intensidad-description" className="field-hint">1 es muy leve y 5 es muy intensa.</p>
                 {fieldErrors.intensidad && <p id="intensidad-error" className="field-error">{fieldErrors.intensidad}</p>}
               </div>
 
